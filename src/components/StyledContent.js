@@ -1,7 +1,7 @@
 import React from "react";
 import styled, { css } from "styled-components";
-import ArrowRed from "../assets/arrow_red.svg";
-import ArrowBlue from "../assets/arrow_blue.svg";
+import { ReactComponent as ArrowRed } from "../assets/arrow_red.svg";
+import { ReactComponent as ArrowBlue } from "../assets/arrow_blue.svg";
 
 import {
   HEADER_ALLOWANCE,
@@ -70,6 +70,7 @@ export const StyledInfoContainer = styled.aside`
   border: 0;
   background: #191921;
   border-top: 1px solid white;
+
   ${media.md`
     position: absolute;
     top: 20px;
@@ -104,11 +105,14 @@ export const Columns = styled.div`
 `;
 
 export const Column = styled.div`
-  ${media.md` 
+  margin-left: ${({ leftGap }) =>
+    leftGap ? `${SIDEBAR_LEFT_PADDING}vw` : "initial"};
+  width: ${() => `${COLUMN_WIDTH}vw`};
+  /* ${media.md` 
     width: ${() => `${COLUMN_WIDTH}vw`}
     margin-left: ${({ leftGap }) =>
       leftGap ? `${SIDEBAR_LEFT_PADDING}vw` : "initial"};
-  `}
+  `}; */
 `;
 
 export const DisplayBox = styled.div`

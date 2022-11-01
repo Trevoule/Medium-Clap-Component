@@ -10,7 +10,7 @@ import {
 } from "../StyledContent";
 import Button from "../../ui/Button";
 
-export const MediumClap = () => (
+const MediumClap = () => (
   <StyledContentContainer>
     <H1>The Medium Clap</H1>
 
