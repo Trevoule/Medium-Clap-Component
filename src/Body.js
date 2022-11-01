@@ -188,6 +188,7 @@ const Body = ({ setShowSidebar, isMediumOrLarger }) => {
         <Route path={HOME} element={<Home />} />
         {patterns.map((pattern, index) => (
           <Route
+            key={pattern}
             path={pattern}
             element={
               <RouteComponent
