@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import {
   HEADER_ALLOWANCE,
@@ -38,9 +38,9 @@ const StyledNavigation = styled.nav`
     text-decoration: none;
     color: ${() => `${LIGHTER_GREY}`};
   }
-  > a:active,
+
   > a:hover {
-    background: ${() => `${GREY}`};
+    outline: ${() => `1px solid ${GREY}`};
   }
 `;
 
@@ -68,9 +68,15 @@ const Sidebar = () => {
       <LogoArea />
       <StyledNavigation>
         {NAV_ITEMS.map((item) => (
-          <Link key={item} to={item.toLowerCase().split(" ").join("-")}>
+          <NavLink
+            style={({ isActive }) => ({
+              background: isActive ? GREY : "",
+            })}
+            key={item}
+            to={item.toLowerCase().split(" ").join("-")}
+          >
             {item}
-          </Link>
+          </NavLink>
         ))}
       </StyledNavigation>
     </StyledSidebar>
