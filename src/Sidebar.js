@@ -62,6 +62,10 @@ const NAV_ITEMS = [
   "State Reducers",
 ];
 
+const linkItem = (item) => {
+  return item.toLowerCase().split(" ").join("-");
+};
+
 const Sidebar = () => {
   return (
     <StyledSidebar>
@@ -73,7 +77,7 @@ const Sidebar = () => {
               background: isActive ? GREY : "",
             })}
             key={item}
-            to={item.toLowerCase().split(" ").join("-")}
+            to={item === "Home" ? "/" : linkItem(item)}
           >
             {item}
           </NavLink>
