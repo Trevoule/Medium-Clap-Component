@@ -1,4 +1,5 @@
 import React, { Component, useState } from "react";
+import mojs from "mo-js";
 import "./index.css";
 
 const initialState = {
@@ -12,24 +13,47 @@ const withClapAnimation = (WrappedComponent) => {
   class WithClapAnimation extends Component {
     // this handles animation logic
 
-    animate = () => {
-      console.log("%c Animate", "background:yellow;color:black");
+    animationTimeLine = new mojs.Timeline();
+
+    state = {
+      animationTimeLine: this.animationTimeLine,
     };
 
+    componentDidMount() {
+      const scaleButton = new mojs.Html({
+        el: "#clap",
+        duration: 300,
+        scale: { 1.3: 1 },
+        easing: mojs.easing.ease.out,
+      });
+
+      // needed to return initial scale after animation replay
+      const clap = document.getElementById("clap");
+      clap.style.transform = "scale(1, 1)";
+
+      const newAnimationTimeline = this.animationTimeLine.add([scaleButton]);
+      this.setState({ animationTimeLine: newAnimationTimeline });
+    }
+
     render() {
-      return <WrappedComponent {...this.props} animate={this.animate} />;
+      return (
+        <WrappedComponent
+          {...this.props}
+          animationTimeLine={this.state.animationTimeLine}
+        />
+      );
     }
   }
   return WithClapAnimation;
 };
 
-const MediumClap = ({ animate }) => {
+const MediumClap = ({ animationTimeLine }) => {
   const MAXIMUM_USER_CLAP = 50;
   const [clapState, setClapState] = useState(initialState);
   const { count, countTotal, isClicked } = clapState;
 
   const handleClapClick = () => {
-    animate();
+    animationTimeLine.replay();
     setClapState((prevState) => ({
       isClicked: true,
       // return minimumValue among them
@@ -42,7 +66,7 @@ const MediumClap = ({ animate }) => {
   };
 
   return (
-    <button className="clap" onClick={handleClapClick}>
+    <button id="clap" className="clap" onClick={handleClapClick}>
       <ClapIcon isClicked={isClicked} />
       <ClapCount count={count} />
       <CountTotal countTotal={countTotal} />
