@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useLayoutEffect, useState } from "react";
 import mojs from "mo-js";
 import "./index.css";
 
@@ -8,20 +8,8 @@ const initialState = {
   isClicked: false,
 };
 
-// Higher Order Component
-// const initialState = new mojs.Timeline();
-// const withClapAnimation = (WrappedComponent) => {
-// class WithClapAnimation extends Component {
-// this handles animation logic
-
-// animationTimeLine = new mojs.Timeline();
-
-// state = {
-//   animationTimeLine: this.animationTimeLine,
-// };
-
 // Custom Hook for animation
-const useClapAnimation = () => {
+const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
   const [animationTimeLine, setAnimationTimeLine] = useState(
     // passing function reference opposed to invoking a function withing useState
     // if regular object will be created each time
@@ -29,18 +17,24 @@ const useClapAnimation = () => {
   );
 
   // componentDidMount
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // needs to wait for elements
+    if (!clapEl || !countEl || !clapTotalEl) return;
+
     const tlDuration = 300;
 
     const scaleButton = new mojs.Html({
-      el: "#clap",
+      // id will be same for all elements,
+      // so we need to create specific ref for every node
+      // el: "#clap",
+      el: clapEl,
       duration: tlDuration,
       scale: { 1.3: 1 },
       easing: mojs.easing.ease.out,
     });
 
     const triangleBurst = new mojs.Burst({
-      parent: "#clap",
+      parent: clapEl,
       radius: { 50: 95 },
       count: 5,
       angle: 30,
@@ -58,7 +52,7 @@ const useClapAnimation = () => {
     });
 
     const circleBurst = new mojs.Burst({
-      parent: "#clap",
+      parent: clapEl,
       radius: { 50: 75 },
       count: 5,
       angle: 25,
@@ -77,7 +71,8 @@ const useClapAnimation = () => {
     });
 
     const countTotalAnimation = new mojs.Html({
-      el: "#clapCountTotal",
+      // el: "#clapCountTotal",
+      el: clapTotalEl,
       opacity: { 0: 1 },
       delay: (3 * tlDuration) / 2,
       duration: tlDuration,
@@ -86,7 +81,8 @@ const useClapAnimation = () => {
     });
 
     const countAnimation = new mojs.Html({
-      el: "#clapCount",
+      // el: "#clapCount",
+      el: countEl,
       opacity: { 0: 1 },
       delay: (3 * tlDuration) / 2,
       duration: tlDuration,
@@ -98,9 +94,18 @@ const useClapAnimation = () => {
       y: -80,
     });
 
+    // id
     // needed to return initial scale after animation replay
-    const clap = document.getElementById("clap");
-    clap.style.transform = "scale(1, 1)";
+    // const clap = document.getElementById("clap");
+    // clap.style.transform = "scale(1, 1)";
+
+    // ref
+    if (typeof clapEl === "string") {
+      const clap = document.getElementById("clap");
+      clap.style.transform = "scale(1, 1)";
+    } else {
+      clapEl.style.transform = "scale(1, 1)";
+    }
 
     const newAnimationTimeline = animationTimeLine.add([
       scaleButton,
@@ -109,20 +114,9 @@ const useClapAnimation = () => {
       circleBurst,
       triangleBurst,
     ]);
-    // this.setState({ animationTimeLine: newAnimationTimeline });
     setAnimationTimeLine(newAnimationTimeline);
-  }, []);
+  }, [animationTimeLine, clapEl, clapTotalEl, countEl]);
 
-  //   render() {
-  //     return (
-  //       <WrappedComponent
-  //         {...this.props}
-  //         animationTimeLine={this.state.animationTimeLine}
-  //       />
-  //     );
-  //   }
-  // }
-  // return WithClapAnimation;
   return animationTimeLine;
 };
 
@@ -136,7 +130,27 @@ const MediumClap = () => {
   const { count, countTotal, isClicked } = clapState;
 
   // custom hook returns animationTimeLine
-  const animationTimeLine = useClapAnimation();
+  // const animationTimeLine = useClapAnimation();
+
+  const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
+
+  // we need useCallback for action only when deps changing
+  const setRef = useCallback((node) => {
+    // the fact that we can save state / setState here is a major reason
+    //  we're using the callback ref as setting state re-renders
+    // the component and forces useClapAnimation to be reinvoked with the received refs.
+    setRefState((prevRefState) => ({
+      ...prevRefState,
+      // data-refKey for specifying each node in setRef
+      [node.dataset.refkey]: node,
+    }));
+  }, []);
+
+  const animationTimeLine = useClapAnimation({
+    clapEl: clapRef,
+    countEl: clapCountRef,
+    clapTotalEl: clapTotalRef,
+  });
 
   const handleClapClick = () => {
     animationTimeLine.replay();
@@ -152,10 +166,17 @@ const MediumClap = () => {
   };
 
   return (
-    <button id="clap" className="clap" onClick={handleClapClick}>
+    <button
+      ref={setRef}
+      // data-refkey for specifying each node in setRef
+      // id="clap"
+      data-refkey="clapRef"
+      className="clap"
+      onClick={handleClapClick}
+    >
       <ClapIcon isClicked={isClicked} />
-      <ClapCount count={count} />
-      <CountTotal countTotal={countTotal} />
+      <ClapCount count={count} setRef={setRef} />
+      <CountTotal countTotal={countTotal} setRef={setRef} />
     </button>
   );
 };
@@ -166,7 +187,6 @@ const ClapIcon = ({ isClicked }) => {
   return (
     <span>
       <svg
-        id="clapIcon"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="-549 338 100.1 125"
         className={`icon ${isClicked && "checked"}`}
@@ -178,26 +198,34 @@ const ClapIcon = ({ isClicked }) => {
   );
 };
 
-const ClapCount = ({ count }) => {
+const ClapCount = ({ count, setRef }) => {
   return (
-    <span id="clapCount" className="count">
+    <span
+      // id="clapCount"
+      ref={setRef}
+      data-refkey="clapCountRef"
+      className="count"
+    >
       + {count}
     </span>
   );
 };
 
-const CountTotal = ({ countTotal }) => {
+const CountTotal = ({ countTotal, setRef }) => {
   return (
-    <span id="clapCountTotal" className="total">
+    <span
+      ref={setRef}
+      data-refkey="clapTotalRef"
+      id="clapCountTotal"
+      className="total"
+    >
       {countTotal}
     </span>
   );
 };
 
-// export default MediumClap
-
-// HOC usage
 const Usage = () => {
+  // HOC usage
   // const AnimatedMediumClap = withClapAnimation(MediumClap);
   // return <AnimatedMediumClap />;
 
