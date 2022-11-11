@@ -1,4 +1,4 @@
-import React, { Component, useState } from "react";
+import React, { useEffect, useState } from "react";
 import mojs from "mo-js";
 import "./index.css";
 
@@ -9,115 +9,134 @@ const initialState = {
 };
 
 // Higher Order Component
-const withClapAnimation = (WrappedComponent) => {
-  class WithClapAnimation extends Component {
-    // this handles animation logic
+// const initialState = new mojs.Timeline();
+// const withClapAnimation = (WrappedComponent) => {
+// class WithClapAnimation extends Component {
+// this handles animation logic
 
-    animationTimeLine = new mojs.Timeline();
+// animationTimeLine = new mojs.Timeline();
 
-    state = {
-      animationTimeLine: this.animationTimeLine,
-    };
+// state = {
+//   animationTimeLine: this.animationTimeLine,
+// };
 
-    componentDidMount() {
-      const tlDuration = 300;
+// Custom Hook for animation
+const useClapAnimation = () => {
+  const [animationTimeLine, setAnimationTimeLine] = useState(
+    // passing function reference opposed to invoking a function withing useState
+    // if regular object will be created each time
+    () => new mojs.Timeline()
+  );
 
-      const scaleButton = new mojs.Html({
-        el: "#clap",
+  // componentDidMount
+  useEffect(() => {
+    const tlDuration = 300;
+
+    const scaleButton = new mojs.Html({
+      el: "#clap",
+      duration: tlDuration,
+      scale: { 1.3: 1 },
+      easing: mojs.easing.ease.out,
+    });
+
+    const triangleBurst = new mojs.Burst({
+      parent: "#clap",
+      radius: { 50: 95 },
+      count: 5,
+      angle: 30,
+      children: {
+        shape: "polygon",
+        radius: { 6: 0 },
+        stroke: "rgba(211,54, 0, 0.5)",
+        strokeWidth: 2,
+        angle: 210,
+        delay: 30,
+        speed: 0.2,
+        easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
         duration: tlDuration,
-        scale: { 1.3: 1 },
-        easing: mojs.easing.ease.out,
-      });
+      },
+    });
 
-      const countTotalAnimation = new mojs.Html({
-        el: "#clapCountTotal",
-        opacity: { 0: 1 },
-        delay: (3 * tlDuration) / 2,
+    const circleBurst = new mojs.Burst({
+      parent: "#clap",
+      radius: { 50: 75 },
+      count: 5,
+      angle: 25,
+      duration: tlDuration,
+      children: {
+        shape: "circle",
+        radius: { 3: 0 },
+        stroke: "rgba(149,165, 166, 0.5)",
+        strokeWidth: 2,
+        angle: 210,
+        delay: 30,
+        speed: 0.2,
+        easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
         duration: tlDuration,
-        // slides to top in the end
-        y: { 0: -3 },
-      });
+      },
+    });
 
-      const triangleBurst = new mojs.Burst({
-        parent: "#clap",
-        radius: { 50: 95 },
-        count: 5,
-        angle: 30,
-        children: {
-          shape: "polygon",
-          radius: { 6: 0 },
-          stroke: "rgba(211,54, 0, 0.5)",
-          strokeWidth: 2,
-          angle: 210,
-          delay: 30,
-          speed: 0.2,
-          easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
-          duration: tlDuration,
-        },
-      });
+    const countTotalAnimation = new mojs.Html({
+      el: "#clapCountTotal",
+      opacity: { 0: 1 },
+      delay: (3 * tlDuration) / 2,
+      duration: tlDuration,
+      // slides to top in the end
+      y: { 0: -3 },
+    });
 
-      const circleBurst = new mojs.Burst({
-        parent: "#clap",
-        radius: { 50: 75 },
-        count: 5,
-        angle: 25,
-        duration: tlDuration,
-        children: {
-          shape: "circle",
-          radius: { 3: 0 },
-          stroke: "rgba(149,165, 166, 0.5)",
-          strokeWidth: 2,
-          angle: 210,
-          delay: 30,
-          speed: 0.2,
-          easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
-          duration: tlDuration,
-        },
-      });
+    const countAnimation = new mojs.Html({
+      el: "#clapCount",
+      opacity: { 0: 1 },
+      delay: (3 * tlDuration) / 2,
+      duration: tlDuration,
+      // slides to top in the end
+      y: { 0: -30 },
+    }).then({
+      opacity: { 1: 0 },
+      delay: tlDuration / 2,
+      y: -80,
+    });
 
-      const countAnimation = new mojs.Html({
-        el: "#clapCount",
-        opacity: { 0: 1 },
-        delay: (3 * tlDuration) / 2,
-        duration: tlDuration,
-        // slides to top in the end
-        y: { 0: -30 },
-      }).then({
-        opacity: { 1: 0 },
-        delay: tlDuration / 2,
-        y: -80,
-      });
+    // needed to return initial scale after animation replay
+    const clap = document.getElementById("clap");
+    clap.style.transform = "scale(1, 1)";
 
-      // needed to return initial scale after animation replay
-      const clap = document.getElementById("clap");
-      clap.style.transform = "scale(1, 1)";
+    const newAnimationTimeline = animationTimeLine.add([
+      scaleButton,
+      countTotalAnimation,
+      countAnimation,
+      circleBurst,
+      triangleBurst,
+    ]);
+    // this.setState({ animationTimeLine: newAnimationTimeline });
+    setAnimationTimeLine(newAnimationTimeline);
+  }, []);
 
-      const newAnimationTimeline = this.animationTimeLine.add([
-        scaleButton,
-        countTotalAnimation,
-        countAnimation,
-        circleBurst,
-        triangleBurst,
-      ]);
-      this.setState({ animationTimeLine: newAnimationTimeline });
-    }
-
-    render() {
-      return (
-        <WrappedComponent
-          {...this.props}
-          animationTimeLine={this.state.animationTimeLine}
-        />
-      );
-    }
-  }
-  return WithClapAnimation;
+  //   render() {
+  //     return (
+  //       <WrappedComponent
+  //         {...this.props}
+  //         animationTimeLine={this.state.animationTimeLine}
+  //       />
+  //     );
+  //   }
+  // }
+  // return WithClapAnimation;
+  return animationTimeLine;
 };
 
-const MediumClap = ({ animationTimeLine }) => {
+// HOC was returning animationTimeLine
+// const MediumClap = ({ animationTimeLine }) => {
+
+// Custom hook
+const MediumClap = () => {
   const MAXIMUM_USER_CLAP = 50;
   const [clapState, setClapState] = useState(initialState);
   const { count, countTotal, isClicked } = clapState;
+
+  // custom hook returns animationTimeLine
+  const animationTimeLine = useClapAnimation();
 
   const handleClapClick = () => {
     animationTimeLine.replay();
@@ -179,8 +198,10 @@ const CountTotal = ({ countTotal }) => {
 
 // HOC usage
 const Usage = () => {
-  const AnimatedMediumClap = withClapAnimation(MediumClap);
-  return <AnimatedMediumClap />;
+  // const AnimatedMediumClap = withClapAnimation(MediumClap);
+  // return <AnimatedMediumClap />;
+
+  return <MediumClap />;
 };
 
 export default Usage;
