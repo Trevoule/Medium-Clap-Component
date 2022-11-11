@@ -7,11 +7,27 @@ import {
   SIDEBAR_LEFT_PADDING,
   LIGHTER_GREY,
   GREY,
+  zIndex,
 } from "./utils/constants";
+
+import { media } from "./components/StyledContent";
 
 const StyledSidebar = styled.div`
   background: #0f0f14;
   padding: ${() => `0 ${SIDEBAR_LEFT_PADDING}vw`};
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: ${zIndex.SIDEBAR};
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4), 0 6px 6px rgba(0, 0, 0, 0.4);
+  position: initial;
+  box-shadow: none;
+
+  /* ${media.md`
+    position: initial;
+    box-shadow: none;
+  `} */
 `;
 
 const StyledLogoArea = styled.div`
@@ -66,7 +82,8 @@ const linkItem = (item) => {
   return item.toLowerCase().split(" ").join("-");
 };
 
-const Sidebar = () => {
+const Sidebar = ({ setShowSidebar }) => {
+  const handleClick = () => setShowSidebar((v) => !v);
   return (
     <StyledSidebar>
       <LogoArea />
