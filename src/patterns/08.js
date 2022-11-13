@@ -146,6 +146,21 @@ const useDOMRef = () => {
   return [DOMRef, setRef];
 };
 
+// const handleClick = (evt) => { ... }
+// <button onClick={handleClick} />
+// for invoking multiple functions curry func
+// onClick requires on function callback
+// (...fns) first invocation in the func parameters
+// (...args) second invocation takes in whatever args are passed in
+// loops over the func list and invokes the funcs with the args
+
+const callFnsInSequence =
+  (...fns) =>
+  (...args) => {
+    //   invoking all funcs
+    fns.forEach((fn) => fn && fn(...args));
+  };
+
 /**
  *  useClapState
  */
@@ -169,20 +184,26 @@ const useClapState = (initialState = INITIAL_STATE) => {
 
   // accessibility props
   // props collection for 'click'
-  const togglerProps = {
-    onClick: updateClapState,
+  // const togglerProps = {
+  const getTogglerProps = ({ onClick, ...otherProps } = {}) => ({
+    // onClick: updateClapState,
+    onClick: callFnsInSequence(updateClapState, onClick),
     "aria-pressed": clapState.isClicked,
-  };
+    ...otherProps,
+  });
 
   // props collection for 'count'
-  const counterProps = {
+  //   const counterProps = {
+  const getCounterProps = ({ ...otherProps } = {}) => ({
     count,
     "aria-valuemax": MAXIMUM_USER_CLAP,
     "aria-valuemin": 0,
     "aria-valuenow": count,
-  };
+    ...otherProps,
+  });
 
-  return { clapState, updateClapState, togglerProps, counterProps };
+  //   return { clapState, updateClapState, togglerProps, counterProps };
+  return { clapState, updateClapState, getTogglerProps, getCounterProps };
 };
 
 /**
@@ -330,7 +351,8 @@ const Usage = () => {
 
   // PROPS COLLECTION FOR BETTER CONTROL
   //   const [clapState, updateClapState] = useClapState();
-  const { clapState, togglerProps, counterProps } = useClapState();
+  //   const { clapState, togglerProps, counterProps } = useClapState();
+  const { clapState, getTogglerProps, getCounterProps } = useClapState();
 
   const { count, countTotal, isClicked } = clapState;
 
@@ -346,18 +368,25 @@ const Usage = () => {
     animationTimeLine.replay();
   }, [count]);
 
+  const handleClick = () => {
+    console.log("Clicked!");
+  };
+
   //   return <MediumClap />;
   return (
     <ClapContainer
       setRef={setRef}
       //   onClick={updateClapState}
       data-refkey="clapRef"
-      {...togglerProps}
+      {...getTogglerProps({
+        onClick: handleClick,
+        "aria-pressed": "false",
+      })}
     >
       <ClapIcon isClicked={isClicked} />
       <ClapCount
         //   count={count}
-        {...counterProps}
+        {...getCounterProps()}
         setRef={setRef}
         data-refkey="clapCountRef"
       />
