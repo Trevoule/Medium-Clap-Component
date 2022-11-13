@@ -191,59 +191,77 @@ const useEffectAfterMount = (cb, deps) => {
 // HOC was returning animationTimeLine
 // const MediumClap = ({ animationTimeLine }) => {
 
+// !! GOES TO ClapContainer !!
+
 // Custom hook
-const MediumClap = () => {
-  const MAXIMUM_USER_CLAP = 50;
-  //   const [clapState, setClapState] = useState(initialState);
-  const [clapState, updateClapState] = useClapState();
-  const { count, countTotal, isClicked } = clapState;
+// const MediumClap = () => {
+//   const MAXIMUM_USER_CLAP = 50;
+//   //   const [clapState, setClapState] = useState(initialState);
+//   const [clapState, updateClapState] = useClapState();
+//   const { count, countTotal, isClicked } = clapState;
 
-  //   const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
-  const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef({});
+//   //   const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
+//   const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef({});
 
-  // !! REPLACED WITH setRef - useDOMRef !!
-  // we need useCallback for action only when deps changing
-  //   const setRef = useCallback((node) => {
-  // the fact that we can save state / setState here is a major reason
-  //  we're using the callback ref as setting state re-renders
-  // the component and forces useClapAnimation to be reinvoked with the received refs.
-  // setRefState((prevRefState) => ({
-  //   ...prevRefState,
-  // data-refKey for specifying each node in setRef
-  //   [node.dataset.refkey]: node,
-  // }));
-  //   }, []);
+//   // !! REPLACED WITH setRef - useDOMRef !!
+//   // we need useCallback for action only when deps changing
+//   //   const setRef = useCallback((node) => {
+//   // the fact that we can save state / setState here is a major reason
+//   //  we're using the callback ref as setting state re-renders
+//   // the component and forces useClapAnimation to be reinvoked with the received refs.
+//   // setRefState((prevRefState) => ({
+//   //   ...prevRefState,
+//   // data-refKey for specifying each node in setRef
+//   //   [node.dataset.refkey]: node,
+//   // }));
+//   //   }, []);
 
-  const animationTimeLine = useClapAnimation({
-    clapEl: clapRef,
-    countEl: clapCountRef,
-    clapTotalEl: clapTotalRef,
-  });
+//   const animationTimeLine = useClapAnimation({
+//     clapEl: clapRef,
+//     countEl: clapCountRef,
+//     clapTotalEl: clapTotalRef,
+//   });
 
-  // - instead of handleClapClick and useEffect for check if just mounted !!
-  //   !! REPLACED WITH LOGIC FROM useEffectAfterMount hook
-  useEffectAfterMount(() => {
-    animationTimeLine.replay();
-  }, [count]);
+//   // - instead of handleClapClick and useEffect for check if just mounted !!
+//   //   !! REPLACED WITH LOGIC FROM useEffectAfterMount hook
+//   useEffectAfterMount(() => {
+//     animationTimeLine.replay();
+//   }, [count]);
 
+//   return (
+//     <button
+//       ref={setRef}
+//       // data-refkey for specifying each node in setRef
+//       // id="clap"
+//       data-refkey="clapRef"
+//       className="clap"
+//       //   onClick={handleClapClick}
+//       onClick={updateClapState}
+//     >
+//       <ClapIcon isClicked={isClicked} />
+//       <ClapCount count={count} setRef={setRef} />
+//       <CountTotal countTotal={countTotal} setRef={setRef} />
+//     </button>
+//   );
+// };
+
+// ===========subcomponents=============
+
+const ClapContainer = ({ children, setRef, updateClapState, ...restProps }) => {
   return (
     <button
       ref={setRef}
       // data-refkey for specifying each node in setRef
-      // id="clap"
       data-refkey="clapRef"
       className="clap"
       //   onClick={handleClapClick}
       onClick={updateClapState}
+      {...restProps}
     >
-      <ClapIcon isClicked={isClicked} />
-      <ClapCount count={count} setRef={setRef} />
-      <CountTotal countTotal={countTotal} setRef={setRef} />
+      {children}
     </button>
   );
 };
-
-// ===========subcomponents=============
 
 const ClapIcon = ({ isClicked }) => {
   return (
@@ -260,33 +278,73 @@ const ClapIcon = ({ isClicked }) => {
   );
 };
 
-const ClapCount = ({ count, setRef }) => {
+const ClapCount = ({ count, setRef, ...restProps }) => {
   return (
-    <span ref={setRef} data-refkey="clapCountRef" className="count">
+    <span
+      ref={setRef}
+      data-refkey="clapCountRef"
+      className="count"
+      {...restProps}
+    >
       + {count}
     </span>
   );
 };
 
-const CountTotal = ({ countTotal, setRef }) => {
+const CountTotal = ({ countTotal, setRef, ...restProps }) => {
   return (
     <span
       ref={setRef}
       data-refkey="clapTotalRef"
       id="clapCountTotal"
       className="total"
+      {...restProps}
     >
       {countTotal}
     </span>
   );
 };
 
+// - custom hooks
+// - UI components
+
 const Usage = () => {
   // HOC usage
   // const AnimatedMediumClap = withClapAnimation(MediumClap);
   // return <AnimatedMediumClap />;
 
-  return <MediumClap />;
+  // PROPS COLLECTION FOR BETTER CONTROL
+  const [clapState, updateClapState] = useClapState();
+  const { count, countTotal, isClicked } = clapState;
+
+  const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef();
+
+  const animationTimeLine = useClapAnimation({
+    clapEl: clapRef,
+    countEl: clapCountRef,
+    clapTotalEl: clapTotalRef,
+  });
+
+  useEffectAfterMount(() => {
+    animationTimeLine.replay();
+  }, [count]);
+
+  //   return <MediumClap />;
+  return (
+    <ClapContainer
+      setRef={setRef}
+      onClick={updateClapState}
+      data-refkey="clapRef"
+    >
+      <ClapIcon isClicked={isClicked} />
+      <ClapCount count={count} setRef={setRef} data-refkey="clapCountRef" />
+      <CountTotal
+        countTotal={countTotal}
+        setRef={setRef}
+        data-refkey="clapTotalRef"
+      />
+    </ClapContainer>
+  );
 };
 
 export default Usage;
