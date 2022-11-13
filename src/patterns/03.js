@@ -172,9 +172,18 @@ const MediumClap = ({ children, onClap }) => {
   // every time when count changes it will invoke onClap
   useEffect(() => {
     // will not be invoked due to conditional
-    // but useEffect invokes every time when componentDidMount
-    onClap && onClap(clapState);
-  }, [clapState, count, onClap]);
+    // but useEffect invokes every re-render
+    // so we could do additional check to make sure that component mounted after re-render
+    // for example after click
+    // with these check, onClap will not be invoked before re-render (click)
+
+    if (!componentJustMounted.current) {
+      onClap && onClap(clapState);
+    }
+
+    componentJustMounted.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count]);
 
   const handleClapClick = () => {
     animationTimeLine.replay();
@@ -295,7 +304,9 @@ const Usage = () => {
         <ClapCount />
         <CountTotal />
       </MediumClap>
-      <div className="info">{`You have clapped ${count} times!`}</div>
+      {!!count && (
+        <div className="info">{`You have clapped ${count} times!`}</div>
+      )}
     </div>
   );
 };
