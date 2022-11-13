@@ -146,6 +146,18 @@ const useDOMRef = () => {
   return [DOMRef, setRef];
 };
 
+/*
+ * hook for getting previous prop/state
+ *
+ */
+const usePrevious = (value) => {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+};
+
 // const handleClick = (evt) => { ... }
 // <button onClick={handleClick} />
 // for invoking multiple functions curry func
@@ -183,10 +195,25 @@ const useClapState = (initialState = INITIAL_STATE) => {
     }));
   }, []);
 
+  // glorified counter
+  const resetRef = useRef(0); //0, 1, 2, 3, 4
+
+  // usePrevious hook docs
+  const prevCount = usePrevious(count);
+
   const reset = useCallback(() => {
     // by using ref we don't need to provide dependency
-    setClapState(userInitialState.current);
-  }, [setClapState]);
+    // setClapState(userInitialState.current);
+    //   }, [setClapState]);
+
+    //  if there is an actual change go and reset
+    //  but if nothing to reset dont do anything
+    if (prevCount !== count) {
+      //   by using ref we don't need to provide dependency
+      setClapState(userInitialState.current);
+      resetRef.current++;
+    }
+  }, [prevCount, count, setClapState]);
 
   // accessibility props
   // props collection for 'click'
@@ -212,6 +239,7 @@ const useClapState = (initialState = INITIAL_STATE) => {
     getTogglerProps,
     getCounterProps,
     reset,
+    resetDeps: resetRef.current,
   };
 };
 
@@ -297,7 +325,8 @@ const ClapContainer = ({ children, setRef, updateClapState, ...restProps }) => {
     <button
       ref={setRef}
       // data-refkey for specifying each node in setRef
-      data-refkey="clapRef"
+      //   data-ref as rest prop
+      //   data-refkey="clapRef"
       className="clap"
       //   onClick={handleClapClick}
       onClick={updateClapState}
@@ -327,7 +356,8 @@ const ClapCount = ({ count, setRef, ...restProps }) => {
   return (
     <span
       ref={setRef}
-      data-refkey="clapCountRef"
+      //   data-ref as rest prop
+      //   data-refkey="clapCountRef"
       className="count"
       {...restProps}
     >
@@ -340,7 +370,8 @@ const CountTotal = ({ countTotal, setRef, ...restProps }) => {
   return (
     <span
       ref={setRef}
-      data-refkey="clapTotalRef"
+      //   data-ref as rest prop
+      //   data-refkey="clapTotalRef"
       id="clapCountTotal"
       className="total"
       {...restProps}
@@ -366,7 +397,7 @@ const Usage = () => {
   // PROPS COLLECTION FOR BETTER CONTROL
   //   const [clapState, updateClapState] = useClapState();
   //   const { clapState, togglerProps, counterProps } = useClapState();
-  const { clapState, getTogglerProps, getCounterProps, reset } =
+  const { clapState, getTogglerProps, getCounterProps, reset, resetDeps } =
     useClapState(userInitialState);
 
   const { count, countTotal, isClicked } = clapState;
@@ -382,6 +413,16 @@ const Usage = () => {
   useEffectAfterMount(() => {
     animationTimeLine.replay();
   }, [count]);
+
+  const [uploading, setUploading] = useState(false);
+
+  useEffectAfterMount(() => {
+    setUploading(true);
+
+    const id = setTimeout(() => setUploading(false), 3000);
+
+    return () => clearTimeout(id);
+  }, [resetDeps]);
 
   const handleClick = () => {
     console.log("Clicked!");
@@ -418,6 +459,9 @@ const Usage = () => {
         </button>
         <pre className={userStyles.resetMsg}>
           {JSON.stringify({ count, countTotal, isClicked })}
+        </pre>
+        <pre className={userStyles.resetMsg}>
+          {uploading ? `uploading reset ${resetDeps} ...` : ""}
         </pre>
       </section>
     </div>
