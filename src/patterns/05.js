@@ -306,6 +306,14 @@ const CountTotal = ({ style: userStyles = {} }, className) => {
   );
 };
 
+const INITIAL_STATE = {
+  count: 0,
+  countTotal: 2100,
+  isClicked: false,
+};
+
+const MAXIMUM_CLAP_VALUE = 50;
+
 const Usage = () => {
   // HOC usage
   // const AnimatedMediumClap = withClapAnimation(MediumClap);
@@ -313,20 +321,38 @@ const Usage = () => {
   // custom hook
   //   return <MediumClap />;
 
-  const [count, setCount] = useState(0);
+  //   const [count, setCount] = useState(0);
+  const [state, setState] = useState(INITIAL_STATE);
   const handleClap = (clapState) => {
-    setCount(clapState.count);
+    // setCount(clapState.count);
+    // count / countTotal previous state
+    setState(({ count, countTotal }) => ({
+      count: Math.min(count + 1, MAXIMUM_CLAP_VALUE),
+      countTotal: count < MAXIMUM_CLAP_VALUE ? countTotal + 1 : countTotal,
+      isClicked: true,
+    }));
   };
 
   return (
     <div style={{ width: "100%" }}>
+      {/* <MediumClap onClap={handleClap} className={userCustomStyles.clap}> */}
+      <MediumClap
+        values={state}
+        onClap={handleClap}
+        className={userCustomStyles.clap}
+      >
+        <ClapIcon className={userCustomStyles.icon} />
+        <ClapCount className={userCustomStyles.count} />
+        <CountTotal className={userCustomStyles.total} />
+      </MediumClap>
       <MediumClap onClap={handleClap} className={userCustomStyles.clap}>
         <ClapIcon className={userCustomStyles.icon} />
         <ClapCount className={userCustomStyles.count} />
         <CountTotal className={userCustomStyles.total} />
       </MediumClap>
-      {!!count && (
-        <div className="info">{`You have clapped ${count} times!`}</div>
+
+      {!!state.count && (
+        <div className="info">{`You have clapped ${state.count} times!`}</div>
       )}
     </div>
   );
