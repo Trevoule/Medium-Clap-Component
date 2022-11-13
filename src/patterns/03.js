@@ -1,4 +1,11 @@
-import React, { useCallback, useLayoutEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import mojs from "mo-js";
 import "./index.css";
 
@@ -123,11 +130,15 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
 // HOC was returning animationTimeLine
 // const MediumClap = ({ animationTimeLine }) => {
 
+// context
+const MediumClapContext = createContext();
+const { Provider } = MediumClapContext;
+
 // Custom hook
-const MediumClap = () => {
+const MediumClap = ({ children }) => {
   const MAXIMUM_USER_CLAP = 50;
   const [clapState, setClapState] = useState(initialState);
-  const { count, countTotal, isClicked } = clapState;
+  const { count } = clapState;
 
   // custom hook returns animationTimeLine
   // const animationTimeLine = useClapAnimation();
@@ -165,25 +176,47 @@ const MediumClap = () => {
     }));
   };
 
+  const memoizedValue = useMemo(
+    () => ({
+      ...clapState,
+      setRef,
+    }),
+    [clapState, setRef]
+  );
+
   return (
-    <button
-      ref={setRef}
-      // data-refkey for specifying each node in setRef
-      // id="clap"
-      data-refkey="clapRef"
-      className="clap"
-      onClick={handleClapClick}
-    >
-      <ClapIcon isClicked={isClicked} />
-      <ClapCount count={count} setRef={setRef} />
-      <CountTotal countTotal={countTotal} setRef={setRef} />
-    </button>
+    // bad approach, because when provider will re-rendered
+    // the whole dom tree will be re-rendered as well
+    // <Provider value={{ ...clapState, setRef }}>
+
+    // to solve the problem of re-rendering we would need to memoize the value with useMemo
+    // clapState is managed by useState and setRef is managed by useCallback
+
+    <Provider value={memoizedValue}>
+      <button
+        ref={setRef}
+        // data-refkey for specifying each node in setRef
+        // id="clap"
+        data-refkey="clapRef"
+        className="clap"
+        onClick={handleClapClick}
+      >
+        {/* <ClapIcon isClicked={isClicked} />
+        <ClapCount count={count} setRef={setRef} />
+        <CountTotal countTotal={countTotal} setRef={setRef} /> */}
+        {children}
+      </button>
+    </Provider>
   );
 };
 
 // ===========subcomponents=============
 
-const ClapIcon = ({ isClicked }) => {
+// const ClapIcon = ({ isClicked }) => {
+// value from provider
+const ClapIcon = () => {
+  const { isClicked } = useContext(MediumClapContext);
+
   return (
     <span>
       <svg
@@ -198,7 +231,10 @@ const ClapIcon = ({ isClicked }) => {
   );
 };
 
-const ClapCount = ({ count, setRef }) => {
+// const ClapCount = ({ count, setRef }) => {
+const ClapCount = () => {
+  const { count, setRef } = useContext(MediumClapContext);
+
   return (
     <span
       // id="clapCount"
@@ -211,7 +247,10 @@ const ClapCount = ({ count, setRef }) => {
   );
 };
 
-const CountTotal = ({ countTotal, setRef }) => {
+// const CountTotal = ({ countTotal, setRef }) => {
+const CountTotal = () => {
+  const { countTotal, setRef } = useContext(MediumClapContext);
+
   return (
     <span
       ref={setRef}
@@ -228,8 +267,16 @@ const Usage = () => {
   // HOC usage
   // const AnimatedMediumClap = withClapAnimation(MediumClap);
   // return <AnimatedMediumClap />;
+  // custom hook
+  //   return <MediumClap />;
 
-  return <MediumClap />;
+  return (
+    <MediumClap>
+      <ClapIcon />
+      <ClapCount />
+      <CountTotal />
+    </MediumClap>
+  );
 };
 
 export default Usage;
