@@ -5,6 +5,8 @@ import React, {
   useLayoutEffect,
   useMemo,
   useState,
+  useEffect,
+  useRef,
 } from "react";
 import mojs from "mo-js";
 import "./index.css";
@@ -135,7 +137,7 @@ const MediumClapContext = createContext();
 const { Provider } = MediumClapContext;
 
 // Custom hook
-const MediumClap = ({ children }) => {
+const MediumClap = ({ children, onClap }) => {
   const MAXIMUM_USER_CLAP = 50;
   const [clapState, setClapState] = useState(initialState);
   const { count } = clapState;
@@ -162,6 +164,17 @@ const MediumClap = ({ children }) => {
     countEl: clapCountRef,
     clapTotalEl: clapTotalRef,
   });
+
+  // useRef keep track of instance variables across re-renders
+  const componentJustMounted = useRef(true);
+
+  // simulation of invoking callback
+  // every time when count changes it will invoke onClap
+  useEffect(() => {
+    // will not be invoked due to conditional
+    // but useEffect invokes every time when componentDidMount
+    onClap && onClap(clapState);
+  }, [clapState, count, onClap]);
 
   const handleClapClick = () => {
     animationTimeLine.replay();
@@ -270,12 +283,20 @@ const Usage = () => {
   // custom hook
   //   return <MediumClap />;
 
+  const [count, setCount] = useState(0);
+  const handleClap = (clapState) => {
+    setCount(clapState.count);
+  };
+
   return (
-    <MediumClap>
-      <ClapIcon />
-      <ClapCount />
-      <CountTotal />
-    </MediumClap>
+    <div style={{ width: "100%" }}>
+      <MediumClap onClap={handleClap}>
+        <ClapIcon />
+        <ClapCount />
+        <CountTotal />
+      </MediumClap>
+      <div className="info">{`You have clapped ${count} times!`}</div>
+    </div>
   );
 };
 
