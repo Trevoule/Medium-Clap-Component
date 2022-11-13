@@ -118,6 +118,34 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
   return animationTimeLine;
 };
 
+/**
+ * useDOMRefHook
+ */
+// these hook recreates logic for targeting nodes via dataset as it was in setRef useState
+//   const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
+//   const setRef = useCallback((node) => {
+// setRefState((prevRefState) => ({
+//   ...prevRefState,
+//   [node.dataset.refkey]: node,
+// }));
+//   }, []);
+
+const useDOMRef = () => {
+  // hook imitate regular behavior of useState
+  // [state, setState] = useState(initialState)
+  const [DOMRef, setRefState] = useState({});
+  // setRef logic
+  const setRef = useCallback((node) => {
+    setRefState((prevRefState) => ({
+      ...prevRefState,
+      [node.dataset.refkey]: node,
+    }));
+  }, []);
+  // DOMRef - state of the refs, holds all the refs
+  // setRef - function updater
+  return [DOMRef, setRef];
+};
+
 // HOC was returning animationTimeLine
 // const MediumClap = ({ animationTimeLine }) => {
 
@@ -127,19 +155,21 @@ const MediumClap = () => {
   const [clapState, setClapState] = useState(initialState);
   const { count, countTotal, isClicked } = clapState;
 
-  const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
+  //   const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
+  const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef({});
 
+  // !! REPLACED WITH setRef - useDOMRef !!
   // we need useCallback for action only when deps changing
-  const setRef = useCallback((node) => {
-    // the fact that we can save state / setState here is a major reason
-    //  we're using the callback ref as setting state re-renders
-    // the component and forces useClapAnimation to be reinvoked with the received refs.
-    setRefState((prevRefState) => ({
-      ...prevRefState,
-      // data-refKey for specifying each node in setRef
-      [node.dataset.refkey]: node,
-    }));
-  }, []);
+  //   const setRef = useCallback((node) => {
+  // the fact that we can save state / setState here is a major reason
+  //  we're using the callback ref as setting state re-renders
+  // the component and forces useClapAnimation to be reinvoked with the received refs.
+  // setRefState((prevRefState) => ({
+  //   ...prevRefState,
+  // data-refKey for specifying each node in setRef
+  //   [node.dataset.refkey]: node,
+  // }));
+  //   }, []);
 
   const animationTimeLine = useClapAnimation({
     clapEl: clapRef,
