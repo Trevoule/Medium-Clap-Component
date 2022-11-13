@@ -138,6 +138,7 @@ const { Provider } = MediumClapContext;
 const MediumClap = ({
   children,
   onClap,
+  values = null,
   style: userStyles = {},
   className,
 }) => {
@@ -168,6 +169,9 @@ const MediumClap = ({
   // useRef keep track of instance variables across re-renders
   const componentJustMounted = useRef(true);
 
+  // controlled component ?
+  const isControlled = !!values && onClap;
+
   // simulation of invoking callback
   useEffect(() => {
     // will not be invoked due to conditional
@@ -176,7 +180,8 @@ const MediumClap = ({
     // for example after click
     // with these check, onClap will not be invoked before re-render (click)
 
-    if (!componentJustMounted.current) {
+    // not invoked if component controlled
+    if (!componentJustMounted.current && !isControlled) {
       onClap && onClap(clapState);
     }
 
@@ -186,23 +191,34 @@ const MediumClap = ({
 
   const handleClapClick = () => {
     animationTimeLine.replay();
-    setClapState((prevState) => ({
-      isClicked: true,
-      // return minimumValue among them
-      count: Math.min(count + 1, MAXIMUM_USER_CLAP),
-      countTotal:
-        count < MAXIMUM_USER_CLAP
-          ? prevState.countTotal + 1
-          : prevState.countTotal,
-    }));
+    isControlled
+      ? onClap()
+      : setClapState((prevState) => ({
+          isClicked: true,
+          // return minimumValue among them
+          count: Math.min(count + 1, MAXIMUM_USER_CLAP),
+          countTotal:
+            count < MAXIMUM_USER_CLAP
+              ? prevState.countTotal + 1
+              : prevState.countTotal,
+        }));
   };
+
+  // controlled state
+  const getState = useCallback(
+    () => (isControlled ? values : clapState),
+    [isControlled, values, clapState]
+  );
 
   const memoizedValue = useMemo(
     () => ({
-      ...clapState,
+      //   ...clapState,
+      // controlled state, spread result with check
+      ...getState(),
       setRef,
     }),
-    [clapState, setRef]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clapState, values, setRef]
   );
 
   const classNames = ["clap", className].join(" ").trim();
