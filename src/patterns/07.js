@@ -153,7 +153,7 @@ const useDOMRef = () => {
 const useClapState = (initialState = INITIAL_STATE) => {
   const MAXIMUM_USER_CLAP = 50;
   const [clapState, setClapState] = useState(initialState);
-  const { count } = clapState;
+  const { count, countTotal } = clapState;
 
   // handleClapClick
   // as updater will be passed to different components
@@ -167,7 +167,18 @@ const useClapState = (initialState = INITIAL_STATE) => {
     }));
   }, []);
 
-  return [clapState, updateClapState];
+  // accessibility props
+  // props collection for 'click'
+  const togglerProps = {
+    onClick: updateClapState,
+  };
+
+  // props collection for 'count'
+  const counterProps = {
+    count,
+  };
+
+  return { clapState, updateClapState, togglerProps, counterProps };
 };
 
 /**
@@ -314,7 +325,9 @@ const Usage = () => {
   // return <AnimatedMediumClap />;
 
   // PROPS COLLECTION FOR BETTER CONTROL
-  const [clapState, updateClapState] = useClapState();
+  //   const [clapState, updateClapState] = useClapState();
+  const { clapState, togglerProps, counterProps } = useClapState();
+
   const { count, countTotal, isClicked } = clapState;
 
   const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef();
@@ -333,11 +346,17 @@ const Usage = () => {
   return (
     <ClapContainer
       setRef={setRef}
-      onClick={updateClapState}
+      //   onClick={updateClapState}
       data-refkey="clapRef"
+      {...togglerProps}
     >
       <ClapIcon isClicked={isClicked} />
-      <ClapCount count={count} setRef={setRef} data-refkey="clapCountRef" />
+      <ClapCount
+        //   count={count}
+        {...counterProps}
+        setRef={setRef}
+        data-refkey="clapCountRef"
+      />
       <CountTotal
         countTotal={countTotal}
         setRef={setRef}
