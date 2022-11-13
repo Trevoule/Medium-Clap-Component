@@ -197,7 +197,7 @@ const MAXIMUM_USER_CLAP = 50;
 // useReducer instead of useState
 // deconstruct of previous state
 // type deconstruct of action object
-const reducer = ({ count, countTotal }, { type, payload }) => {
+const internalReducer = ({ count, countTotal }, { type, payload }) => {
   switch (type) {
     case "clap":
       return {
@@ -207,6 +207,8 @@ const reducer = ({ count, countTotal }, { type, payload }) => {
       };
     case "reset":
       return payload;
+    default:
+      break;
   }
 };
 
@@ -214,7 +216,10 @@ const reducer = ({ count, countTotal }, { type, payload }) => {
  *  useClapState
  */
 
-const useClapState = (initialState = INITIAL_STATE) => {
+const useClapState = (
+  initialState = INITIAL_STATE,
+  reducer = internalReducer
+) => {
   const userInitialState = useRef(initialState);
   //   const [clapState, setClapState] = useState(initialState);
   const [clapState, dispatch] = useReducer(reducer, initialState);
@@ -279,6 +284,13 @@ const useClapState = (initialState = INITIAL_STATE) => {
     reset,
     resetDeps: resetRef.current,
   };
+};
+
+// adding internal reducer
+useClapState.reducer = internalReducer;
+useClapState.types = {
+  clap: "clap",
+  reset: "reset",
 };
 
 /**
@@ -428,6 +440,18 @@ const userInitialState = {
 };
 
 const Usage = () => {
+  const [timesClapped, setTimesClapped] = useState(0);
+  const isClappedTooMuch = timesClapped >= 7; // true/false
+
+  // for creating our custom reducer we need internal reducer and types
+  const reducer = (state, action) => {
+    if (action.type === useClapState.types.clap && isClappedTooMuch) {
+      return state;
+    }
+
+    return useClapState.reducer(state, action);
+  };
+
   // HOC usage
   // const AnimatedMediumClap = withClapAnimation(MediumClap);
   // return <AnimatedMediumClap />;
@@ -436,7 +460,7 @@ const Usage = () => {
   //   const [clapState, updateClapState] = useClapState();
   //   const { clapState, togglerProps, counterProps } = useClapState();
   const { clapState, getTogglerProps, getCounterProps, reset, resetDeps } =
-    useClapState(userInitialState);
+    useClapState(userInitialState, reducer);
 
   const { count, countTotal, isClicked } = clapState;
 
@@ -456,6 +480,7 @@ const Usage = () => {
 
   useEffectAfterMount(() => {
     setUploading(true);
+    setTimesClapped(0);
 
     const id = setTimeout(() => setUploading(false), 3000);
 
@@ -463,7 +488,7 @@ const Usage = () => {
   }, [resetDeps]);
 
   const handleClick = () => {
-    console.log("Clicked!");
+    setTimesClapped((prev) => prev + 1);
   };
 
   //   return <MediumClap />;
@@ -496,10 +521,13 @@ const Usage = () => {
           reset
         </button>
         <pre className={userStyles.resetMsg}>
-          {JSON.stringify({ count, countTotal, isClicked })}
+          {JSON.stringify({ timesClapped, count, countTotal })}
         </pre>
         <pre className={userStyles.resetMsg}>
           {uploading ? `uploading reset ${resetDeps} ...` : ""}
+        </pre>
+        <pre style={{ color: "red" }}>
+          {isClappedTooMuch ? `You have clapped too much` : ""}
         </pre>
       </section>
     </div>
